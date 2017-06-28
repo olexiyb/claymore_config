@@ -12,6 +12,8 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.ModifyEvent;
@@ -28,26 +30,29 @@ import org.eclipse.swt.widgets.List;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.TabFolder;
 import org.eclipse.swt.widgets.TabItem;
-import org.osgi.service.startlevel.StartLevel;
 
 import mslinks.ShellLink;
 
-import org.eclipse.swt.widgets.Text;
-import java.util.Calendar;
 import java.util.Date;
 import java.text.SimpleDateFormat;
+import org.eclipse.swt.widgets.Table;
+import org.eclipse.swt.layout.FillLayout;
+import org.eclipse.swt.custom.ScrolledComposite;
+import org.eclipse.swt.widgets.TableColumn;
+import org.eclipse.swt.widgets.TableItem;
 
 public class ConfigGenerator {
 
-	private static final String CLAYMORE_DIR = "c:\\Dropbox\\programs\\claymore_9.4\\";
-	private static final String CMD_NEXT_LINE = " ^";
-	private static final String CLAYMORE_CONFIG_TXT = "\\claymore\\config.txt";
+	private static final String CLAYMORE_DIR = "c:\\Dropbox\\programs\\claymore_9.5\\";
+//	private static final String CMD_NEXT_LINE = " ^";
+	private static final String CLAYMORE_CONFIG_TXT = "\\Desktop\\config.txt";
 	private static final String CLAYMORE_START_BAT = "\\Desktop\\start.bat";
 	private static final String IPCONFIG_TXT = "ipconfig.txt";
 	protected Shell shell;
 	private List pool1list;
 	private Button btnEnableDebug;
 	Map<String, String> wallets = new HashMap<String, String>();
+	Map<String, String> parents_mapping = new HashMap<String, String>();
 	Map<String, Map<String, String>> pools = new HashMap<String, Map<String, String>>();
 	private Combo coin1combo;
 	private Combo coin2combo;
@@ -66,7 +71,14 @@ public class ConfigGenerator {
 	private TabItem tbtmEthman;
 	private Composite composite_1;
 	private List ethmanList;
-	private List consoleList;;
+	private List consoleList;
+	private Label lblConfigtxt;
+	private List configList;
+	private Label lblConfigtxt_1;
+	private List currentConfig;
+	private Table rigsData;
+	private List ethmanListAll;
+	private Label ethmanAllPath;;
 
 	/**
 	 * Launch the application.
@@ -103,7 +115,7 @@ public class ConfigGenerator {
 		{
 			startList.removeAll();
 			startList.add("rem " + coin1combo.getText() + "," + coin2combo.getText());
-			startList.add("timeout /t 10");
+			startList.add("timeout /t 15");
 			startList.add("move /Y c:\\Users\\Default\\AppData\\Local\\Temp\\claymore_<rig>.log " + dropboxFolder);
 			startList.add("c:\\Dropbox\\shell\\bash -c \"ipconfig | grep 'IPv4 Address' > " + dropboxFolderBash + "<rig>\\\\" + IPCONFIG_TXT + "\"");
 			startList.add("setx GPU_FORCE_64BIT_PTR 0");
@@ -111,164 +123,240 @@ public class ConfigGenerator {
 			startList.add("setx GPU_USE_SYNC_OBJECTS 1");
 			startList.add("setx GPU_MAX_ALLOC_PERCENT 100");
 			startList.add("setx GPU_SINGLE_ALLOC_PERCENT 100");
-			startList.add(CLAYMORE_DIR+"EthDcrMiner64.exe ^");
+			//startList.add("start C:\\Dropbox\\programs\\nodevfee\\nodevfee.exe " + wallets.get(coin1) + " 3333");
+			startList.add(CLAYMORE_DIR+"EthDcrMiner64.exe " + dropboxFolder + "<rig>" + CLAYMORE_CONFIG_TXT);
+			startList.add("rem c:\\Dropbox\\programs\\zec_0.3.4b\\zen.bat");
+			startList.add("rem shutdown /r /t 5 /f");
+		}
+		{//CLAYMORE_CONFIG_TXT
+			configList.removeAll();
 			{// coin1
 				if (!coin1.equals("")) {
-					startList.add("-ewal " + wallets.get(coin1) + CMD_NEXT_LINE);
+					configList.add("-ewal " + wallets.get(coin1));
 					for (String pool : pool1list.getSelection()) {
-						startList.add("-epool " + pools.get(coin1).get(pool) + CMD_NEXT_LINE);
+						configList.add("-epool " + pools.get(coin1).get(pool));
 					}
-					startList.add("-eworker <rig>" + CMD_NEXT_LINE);
-					startList.add("-epsw x" + CMD_NEXT_LINE);
+					configList.add("-eworker <rig>");
+					configList.add("-epsw x");
 					if (coin1.equals("EXP")) {
-						startList.add("-allcoins exp" + CMD_NEXT_LINE);
+						configList.add("-allcoins exp");
 					}
 					else if (!coin1.equals("ETH")) {
-						startList.add("-allcoins 1" + CMD_NEXT_LINE);
-						startList.add("-allpools 1" + CMD_NEXT_LINE);
+						configList.add("-allcoins 1");
+						configList.add("-allpools 1");
 					}
 				}
 			}
 			{// coin2
-				if (!coin2.equals("")) {
+				if (!coin2.equals("NONE")) {
 					for (String pool : pool2list.getSelection()) {
-						startList.add("-dpool " + pools.get(coin2).get(pool) + CMD_NEXT_LINE);
-						if (pool.equals("coinmine.pl")) {
-							startList.add("-dwal olexiyb.<rig>" + CMD_NEXT_LINE);
+						configList.add("-dpool " + pools.get(coin2).get(pool));
+						if (pool.equals("coinmine.pl") || pool.equals("suprnova.cc")) {
+							configList.add("-dwal olexiyb.<rig>");
 						}
 						else if (coin2.equals("SIA"))
 						{
-							startList.add("-dwal " + wallets.get(coin2)+".<rig>" + CMD_NEXT_LINE);													
+							if (pool.startsWith("nanopool.org"))
+							{
+								configList.add("-dwal " + wallets.get(coin2)+"/<rig>/olexiyb@gmail.com");								
+							}
+							else
+							{
+								configList.add("-dwal " + wallets.get(coin2)+".<rig>");
+							}
 						}
 						else
 						{
-							startList.add("-dwal " + wallets.get(coin2) + CMD_NEXT_LINE);							
+							configList.add("-dwal " + wallets.get(coin2));							
 						}
 					}
 					if (coin2.equals("SIA"))
 					{
-						startList.add("-dcoin sia" + CMD_NEXT_LINE);
-						startList.add("-dcri 14" + CMD_NEXT_LINE);
+						configList.add("-dcoin sia");
+						configList.add("-dcri 14");
+					}
+					else if (coin2.equals("LBC"))
+					{
+						configList.add("-dcoin lbc");
+						configList.add("-dcri 25");
 					}
 					else
 					{
-						startList.add("-dcri 22" + CMD_NEXT_LINE);
+						configList.add("-dcri 22");
 					}
 				}
+				else
+				{
+					configList.add("-mode 1");
+				}
 			}
-			startList.add("-retrydelay 1" + CMD_NEXT_LINE);
-			startList.add("-r 1" + CMD_NEXT_LINE);
+			configList.add("-retrydelay 1");
+			configList.add("-r 1");
+//			configList.add("-di detect");
 			if (btnEnableDebug.getSelection()) {
-				startList.add("-dbg 1" + CMD_NEXT_LINE);
-				startList.add("-logfile c:\\Users\\Default\\AppData\\Local\\Temp\\claymore_<rig>.log" + CMD_NEXT_LINE);
+				configList.add("-dbg 1");
+				configList.add("-logfile c:\\Users\\Default\\AppData\\Local\\Temp\\claymore_<rig>.log");
 			} else {
-				startList.add("-dbg -1" + CMD_NEXT_LINE);
+				configList.add("-dbg -1");
 			}
-			startList.add("-mport 3333");
-			startList.add("");
+			configList.add("-mport 3333");
 			//startList.add("shutdown /r /t 5 /f");
 		}
+		setEthmanConfig(true,ethmanList);
+		setEthmanConfig(false,ethmanListAll);
+	}
+
+	Boolean isDima(String rig)
+	{
+		return rig.equals("rig004") || rig.equals("rig005") || rig.equals("rig006") || rig.startsWith("rig008") || rig.equals("rig010") || rig.equals("rig012") || rig.equals("rig027") || rig.equals("rig028");
+	}
+	private void setEthmanConfig(Boolean pokrovka, List ethmanConf) 
+	{
+		String coin1 = coin1combo.getText();
+		String coin2 = coin2combo.getText();
+		ethmanConf.removeAll();
+		ethmanConf.add("[main]");
+		ethmanConf.add("width=1296");
+		ethmanConf.add("height=1010");
+		ethmanConf.add("colwidth0=150");
+		ethmanConf.add("colwidth1=130");
+		ethmanConf.add("colwidth2=108");
+		ethmanConf.add("colwidth3=150");
+		ethmanConf.add("colwidth4=150");
+		ethmanConf.add("colwidth5=240");
+		ethmanConf.add("colwidth6=200");
+		ethmanConf.add("colwidth7=50");
+		ethmanConf.add("colwidth8=100");
+		ethmanConf.add("httpport=8000");
+		ethmanConf.add("warntitle=0");
+		ethmanConf.add("tray=0");
+		ethmanConf.add("detailedhash=0");
+		ethmanConf.add("sound=beep");
+		ethmanConf.add("soundpause=30");
+		ethmanConf.add("enablesound=0");
+		ethmanConf.add("bat=sample.bat");
+		ethmanConf.add("batpause=5");
+		ethmanConf.add("batminimized=0");
+		ethmanConf.add("warndiff=7");
+		ethmanConf.add("dualcoin="+coin2);
+		ethmanConf.add("maincoin="+coin1);
+		ethmanConf.add("scale1=MH/s");
+		ethmanConf.add("scale2=MH/s");
+		ethmanConf.add("fontsize=12");
+		ethmanConf.add("bgcolor=-16777211");
+		ethmanConf.add("dec1=1");
+		ethmanConf.add("dec2=1");
+		ethmanConf.add("updateinterval=5000");
+		ethmanConf.add("pass_http=");
+		ethmanConf.add("emailenbl=0");
+		ethmanConf.add("emailgroup=1");
+		ethmanConf.add("emailaddr=");
+		ethmanConf.add("smtpsrv=");
+		ethmanConf.add("smtpname=");
+		ethmanConf.add("smtppaswd=");
+		ethmanConf.add("smtpport=465");
+		ethmanConf.add("emailtls=1");
+		final File dropDir = new File(dropboxFolder);
+		int coin1rate = 27;
+		int coin2rate = 630;
+		if (coin2.equals("SIA"))
 		{
-			ethmanList.removeAll();
-			ethmanList.add("[main]");
-			ethmanList.add("width=1296");
-			ethmanList.add("height=1010");
-			ethmanList.add("colwidth0=70");
-			ethmanList.add("colwidth1=130");
-			ethmanList.add("colwidth2=108");
-			ethmanList.add("colwidth3=150");
-			ethmanList.add("colwidth4=150");
-			ethmanList.add("colwidth5=240");
-			ethmanList.add("colwidth6=200");
-			ethmanList.add("colwidth7=50");
-			ethmanList.add("colwidth8=100");
-			ethmanList.add("httpport=8000");
-			ethmanList.add("warntitle=0");
-			ethmanList.add("tray=0");
-			ethmanList.add("detailedhash=0");
-			ethmanList.add("sound=beep");
-			ethmanList.add("soundpause=30");
-			ethmanList.add("enablesound=0");
-			ethmanList.add("bat=sample.bat");
-			ethmanList.add("batpause=5");
-			ethmanList.add("batminimized=0");
-			ethmanList.add("warndiff=7");
-			ethmanList.add("dualcoin="+coin2);
-			ethmanList.add("maincoin="+coin1);
-			ethmanList.add("scale1=MH/s");
-			ethmanList.add("scale2=MH/s");
-			ethmanList.add("fontsize=12");
-			ethmanList.add("bgcolor=-16777211");
-			ethmanList.add("dec1=1");
-			ethmanList.add("dec2=1");
-			ethmanList.add("updateinterval=5000");
-			ethmanList.add("pass_http=");
-			ethmanList.add("emailenbl=0");
-			ethmanList.add("emailgroup=1");
-			ethmanList.add("emailaddr=");
-			ethmanList.add("smtpsrv=");
-			ethmanList.add("smtpname=");
-			ethmanList.add("smtppaswd=");
-			ethmanList.add("smtpport=465");
-			ethmanList.add("emailtls=1");
-			final File dropDir = new File(dropboxFolder);
-			int index = 0;
-			int coin1rate = 27;
-			int coin2rate = 630;
-			if (coin2.equals("SIA"))
-			{
-				coin2rate = 380;
-			}
-			for (final File fileEntry : dropDir.listFiles()) {
-				int cardsinrig = 6;
-				if (fileEntry.isDirectory()) {
-					if (fileEntry.getName().startsWith("rig0")) {
-						String rig = fileEntry.getName();
-						rigsList.add(rig);
-						String config = dropboxFolder + rig + "\\" + IPCONFIG_TXT;
-						try {
-							java.util.List<String> lines = Files.readAllLines(Paths.get(config));
-							String ip = lines.get(0).split(":")[1];
-							ethmanList.add("[rig_" + index + "]");
-							ethmanList.add("name=" + rig);
-							if (rig.equals("rig002") || rig.equals("rig099"))
+			coin2rate = 380;
+		}
+		Map<String, java.util.List<String>> ecfg = new TreeMap<String, java.util.List<String> >();
+
+		for (final File fileEntry : dropDir.listFiles()) {
+			int cardsinrig = 8;
+			if (fileEntry.isDirectory()) {
+				if (fileEntry.getName().startsWith("rig0")) {
+					String rig = fileEntry.getName();
+					if (pokrovka)
+					{
+						if (rig.equals("rig000") || rig.equals("rig001") || rig.equals("rig002") || rig.startsWith("rig09")) continue;
+						if (isDima(rig)) continue;
+					}
+					java.util.List<String> mcfg  = new ArrayList<String>();
+//						rigsList.add(rig);
+					String config = dropboxFolder + rig + "\\" + IPCONFIG_TXT;
+					try {
+						java.util.List<String> lines = Files.readAllLines(Paths.get(config));
+						System.out.println("rig="+rig+ " size=" + lines.size());
+						String ip = lines.get(0).split(":")[1];
+						String port = "3333";
+						String name = rig;
+						if (parents_mapping.containsKey(rig))
+							name = parents_mapping.get(rig);
+						if (rig.equals("rig001") || rig.equals("rig002") || rig.equals("rig098") || rig.equals("rig099") || rig.equals("rig000") || isDima(rig))
+						{
+							if (isDima(rig))
 							{
-								ethmanList.add("ip=rye2000.ddns.net");
-								ethmanList.add("port=5" + rig.replace("rig", ""));
+								ip = "dnepr2000.ddns.net";
+								name = name + ".dim";
+								cardsinrig = 6;
 							}
 							else
 							{
-								ethmanList.add("ip=" + ip);
-								ethmanList.add("port=3333");
+								ip = "rye2000.ddns.net";
+								name = name + ".ale";
 							}
-							if (rig.equals("rig011"))
+							if (rig.equals("rig000"))
 							{
-								cardsinrig = 3;
+								port = "5100";
 							}
-							else if (rig.equals("rig006") || rig.equals("rig018") || rig.equals("rig010"))
+							else
 							{
-								cardsinrig = 5;								
+								port="5" + rig.replace("rig", "");
 							}
-							else if (rig.equals("rig002") || rig.equals("rig007") || rig.equals("rig009"))
-							{
-								cardsinrig = 8;								
-							}
-							ethmanList.add("ethrate="+(coin1rate*cardsinrig));
-							ethmanList.add("dcrrate="+(coin2rate*cardsinrig));
-							ethmanList.add("warntemp=80");
-							ethmanList.add("comments=");
-							ethmanList.add("disabled=0");
-							index++;
-						} catch (IOException e1) {
-							// TODO Auto-generated catch block
-							//e1.printStackTrace();
 						}
-
+						else
+						{
+							name = name + ".leo";
+						}
+						mcfg.add("name=" + name);
+						mcfg.add("ip=" + ip);
+						mcfg.add("port=" + port);
+						
+						if (rig.equals("rig027") || rig.equals("rig028"))
+						{
+							cardsinrig = 5;								
+						}
+						else if (rig.equals("rig001"))
+						{
+							cardsinrig = 7;								
+						}
+						if (rig.equals("rig098"))
+						{
+							mcfg.add("ethrate=46");
+							mcfg.add("dcrrate=280");						
+						}
+						else
+						{
+							mcfg.add("ethrate="+(coin1rate*cardsinrig));
+							mcfg.add("dcrrate="+(coin2rate*cardsinrig));
+						}
+						mcfg.add("warntemp=80");
+						mcfg.add("comments=" + rig);
+						mcfg.add("disabled=0");
+						ecfg.put(name, mcfg);
+					} catch (IOException e1) {
+						// TODO Auto-generated catch block
+						//e1.printStackTrace();
 					}
+
 				}
 			}
-
 		}
+		int index = 0;
+		for (Map.Entry<String, java.util.List<String>> entry : ecfg.entrySet()) {
+			ethmanConf.add("[rig_" + index + "]");
+			java.util.List<String> v = entry.getValue();
+			for (int i = 0; i < v.size(); ++i)
+			{
+				ethmanConf.add(v.get(i));
+			}
+			index++;
+		}
+
 	}
 
 	private String backupFile(String f) {
@@ -305,12 +393,33 @@ public class ConfigGenerator {
 		wallets.put("UBQ","0x607e9b48ff62804c6dc1c54c34882ec003bef7e2"); //bittrex
 		wallets.put("DCR","DsnWmnuZQCxS2YrXdoFsqyJrFSoQqcosAQC"); //bittrex
 		wallets.put("SIA","bb22284ece529947ffa4050a4a73416f850c4260845493ef8ababf112d091371c4f59dd03063"); //personal
+		wallets.put("LBC","bHtDwiVmp4nkFY49Gf8nu8R3UT2mRKq8de"); //personal
 
+		parents_mapping.put("rig017","rig101");
+		parents_mapping.put("rig011","rig102");
+		parents_mapping.put("rig009","rig103");
+		parents_mapping.put("rig007","rig104");
+		parents_mapping.put("rig014","rig105");
+		parents_mapping.put("rig018","rig106");
+		parents_mapping.put("rig003","rig107");
+		parents_mapping.put("rig016","rig108");
+		parents_mapping.put("rig023","rig109");
+		parents_mapping.put("rig024","rig110");
+		parents_mapping.put("rig025","rig111");
+		parents_mapping.put("rig026","rig112");
+		parents_mapping.put("rig021","rig113");
+		parents_mapping.put("rig022","rig114");
+		parents_mapping.put("rig019","rig115");
+		parents_mapping.put("rig020","rig116");
+		parents_mapping.put("rig013","rig117");
+		parents_mapping.put("rig015","rig118");
 		{// ETH
 			Map<String, String> p = new HashMap<String, String>();
 			p.put("1. ethpool.org","eu1.ethpool.org:3333");
-			p.put("2. alpereum", "eu.alpereum.ch:3002");
-			p.put("3. ethermine", "us1.ethermine.org:4444");
+			p.put("2. ethpool.org","us1.ethpool.org:3333");
+//			p.put("3. ethpool.org","us2.ethpool.org:3333");
+//			p.put("3. alpereum", "eu.alpereum.ch:3002");
+//			p.put("4. ethermine", "us1.ethermine.org:4444");
 			pools.put("ETH", p);
 		}
 		{// ETC
@@ -327,8 +436,15 @@ public class ConfigGenerator {
 			Map<String, String> p = new HashMap<String, String>();
 //			p.put("decredpool.org", "stratum+tcp://stratum.decredpool.org:3333");
 			p.put("coinmine.pl", "stratum+tcp://dcr-eu.coinmine.pl:2222");
-//			p.put("zpool.ca", "stratum+tcp://decred.mine.zpool.ca:5744");
 			pools.put("DCR", p);
+		}
+		{// LBC
+			Map<String, String> p = new HashMap<String, String>();
+//			p.put("decredpool.org", "stratum+tcp://stratum.decredpool.org:3333");
+			p.put("suprnova.cc", "stratum+tcp://lbry.suprnova.cc:6256");
+			p.put("coinmine.pl", "stratum+tcp://lbc.coinmine.pl:8787");
+//			p.put("zpool.ca", "stratum+tcp://decred.mine.zpool.ca:5744");
+			pools.put("LBC", p);
 		}
 		{// SIA
 			Map<String, String> p = new HashMap<String, String>();
@@ -353,9 +469,9 @@ public class ConfigGenerator {
 		shell = new Shell();
 		shell.setSize(918, 910);
 		shell.setText("SWT Application");
+		shell.setLayout(new FillLayout(SWT.HORIZONTAL));
 
 		tabFolder = new TabFolder(shell, SWT.NONE);
-		tabFolder.setBounds(9, 10, 883, 822);
 
 		tbtmConfigs = new TabItem(tabFolder, SWT.NONE);
 		tbtmConfigs.setText("Configs");
@@ -387,7 +503,7 @@ public class ConfigGenerator {
 
 		coin2combo = new Combo(group, SWT.NONE);
 		coin2combo.setBounds(45, 118, 165, 23);
-		coin2combo.setItems(new String[] {"SIA", "DCR"});
+		coin2combo.setItems(new String[] {"SIA", "DCR", "LBC", "NONE"});
 
 		pool2list = new List(group, SWT.BORDER);
 		pool2list.setBounds(45, 147, 165, 68);
@@ -397,14 +513,14 @@ public class ConfigGenerator {
 		label.setText("Pools");
 
 		startList = new List(composite, SWT.BORDER | SWT.H_SCROLL | SWT.V_SCROLL);
-		startList.setBounds(411, 35, 464, 248);
+		startList.setBounds(411, 35, 464, 147);
 
 		generateStart = new Button(composite, SWT.NONE);
 		generateStart.setText("Generate start.bat");
-		generateStart.setBounds(149, 447, 120, 25);
+		generateStart.setBounds(192, 450, 120, 25);
 		
 		currentStart = new List(composite, SWT.BORDER | SWT.H_SCROLL | SWT.V_SCROLL);
-		currentStart.setBounds(411, 310, 447, 239);
+		currentStart.setBounds(411, 209, 464, 147);
 		
 		tbtmEthman = new TabItem(tabFolder, SWT.NONE);
 		tbtmEthman.setText("Ethman");
@@ -413,7 +529,9 @@ public class ConfigGenerator {
 		tbtmEthman.setControl(composite_1);
 		
 		ethmanList = new List(composite_1, SWT.BORDER | SWT.H_SCROLL | SWT.V_SCROLL);
-		ethmanList.setBounds(10, 38, 687, 746);
+		ethmanList.setBounds(10, 38, 384, 746);
+		ethmanListAll = new List(composite_1, SWT.BORDER | SWT.H_SCROLL | SWT.V_SCROLL);
+		ethmanListAll.setBounds(415, 38, 384, 746);
 
 		coinsList = new List(composite, SWT.BORDER);
 		coinsList.setBounds(72, 10, 71, 465);
@@ -421,6 +539,19 @@ public class ConfigGenerator {
 		rigsList = new List(composite, SWT.BORDER | SWT.MULTI);
 		rigsList.setLocation(0, 10);
 		rigsList.setSize(71, 465);
+		lblConfigtxt = new Label(composite, SWT.NONE);
+		lblConfigtxt.setBounds(411, 362, 464, 15);
+		lblConfigtxt.setText("config.txt");
+		
+		configList = new List(composite, SWT.BORDER | SWT.H_SCROLL | SWT.V_SCROLL);
+		configList.setBounds(411, 383, 464, 176);
+		
+		lblConfigtxt_1 = new Label(composite, SWT.NONE);
+		lblConfigtxt_1.setBounds(411, 565, 153, 15);
+		lblConfigtxt_1.setText("\u0422\u0435\u043A\u0443\u0449\u0438\u0439 config.txt");
+		
+		currentConfig = new List(composite, SWT.BORDER | SWT.H_SCROLL | SWT.V_SCROLL);
+		currentConfig.setBounds(411, 586, 464, 170);
 
 		btnEnableDebug = new Button(group, SWT.CHECK);
 		btnEnableDebug.setSelection(true);
@@ -447,7 +578,7 @@ public class ConfigGenerator {
 		coin2combo.addModifyListener(new ModifyListener() {
 			public void modifyText(ModifyEvent arg0) {
 				String coin2 = coin2combo.getText();
-				if (coin2 != "") {
+				if (!coin2.equals("NONE")) {
 					pool2list.removeAll();
 					Map<String, String> p = pools.get(coin2);
 					for (Map.Entry<String, String> entry : p.entrySet()) {
@@ -481,7 +612,7 @@ public class ConfigGenerator {
 		startFile.setText("start.bat");
 		
 		Label label_1 = new Label(composite, SWT.NONE);
-		label_1.setBounds(411, 289, 201, 15);
+		label_1.setBounds(411, 188, 201, 15);
 		label_1.setText("\u0422\u0435\u043A\u0443\u0449\u0438\u0439 \u0441\u0442\u0430\u0440\u0442");
 		
 		consoleList = new List(composite, SWT.BORDER);
@@ -498,6 +629,8 @@ public class ConfigGenerator {
 					createLink("C:\\Dropbox\\programs\\Total-7.0\\Totalcmd.exe",rig);
 					createLink("C:\\Dropbox\\programs\\polaris_1.4.1\\PolarisBiosEditor.exe",rig);
 					createLink("C:\\Dropbox\\programs\\WattTool-0.92\\WattTool-0.92.exe",rig);
+					createLink("C:\\Dropbox\\programs\\bios_status.cmd",rig);
+					createLink("C:\\Dropbox\\programs\\bios_ati.lnk",rig);
 				}
 			}
 
@@ -524,42 +657,57 @@ public class ConfigGenerator {
 					}
 			}
 		});
-		btnCreateLinks.setBounds(275, 447, 75, 25);
+		btnCreateLinks.setBounds(330, 447, 75, 25);
 		btnCreateLinks.setText("create links");
-		
+				
 		generateStart.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
 				consoleList.removeAll();
 				for (String rig : rigsList.getSelection()) {
-					String config = dropboxFolder + rig + CLAYMORE_START_BAT;
-					backupFile(config);
-					try {
-						java.util.List<String> lines = new ArrayList<String>();
-						for (String configLine : startList.getItems()) {
-							lines.add(configLine.replaceAll("<rig>", rig));
-						}
-						Files.write(Paths.get(config), lines, Charset.forName("UTF-8"));
-						consoleList.add(rig + " : " + config);
-					} catch (IOException e1) {
-						e1.printStackTrace();
-						consoleList.add(rig + " : " + e1.getMessage());
-					}
+					generateFile(startList, rig,dropboxFolder + rig + CLAYMORE_START_BAT);
+					generateFile(configList, rig,dropboxFolder + rig + CLAYMORE_CONFIG_TXT);
 				}
 				currentStart.removeAll();
 				rigsList.deselectAll();
 				readRigsList();
 			}
+
+			protected void generateFile(List list, String rig, String filename) {
+				backupFile(filename);
+				try {
+					java.util.List<String> lines = new ArrayList<String>();
+					for (String configLine : list.getItems()) {
+						if (rig.equals("rig098") && configLine.startsWith("-dcri"))
+						{
+							lines.add("-dcri 60,20,60,60,60,20,60,60");						
+						}
+						else
+						{
+							lines.add(configLine.replaceAll("<rig>", rig));
+						}
+					}
+					Files.write(Paths.get(filename), lines, Charset.forName("UTF-8"));
+					consoleList.add(rig + " : " + filename);
+				} catch (IOException e1) {
+					e1.printStackTrace();
+					consoleList.add(rig + " : " + e1.getMessage());
+				}
+			}
 		});
 		
-		Label ethmanConfig = new Label(composite_1, SWT.NONE);
-		ethmanConfig.setBounds(10, 10, 208, 15);
-		ethmanConfig.setText("C:\\Dropbox\\ethman\\Options.ini");
+		Label ethmanPokrovkaPath = new Label(composite_1, SWT.NONE);
+		ethmanPokrovkaPath.setBounds(10, 10, 208, 15);
+		ethmanPokrovkaPath.setText("C:\\Dropbox\\ethman\\Options.ini");
 		
 		Button btnSave = new Button(composite_1, SWT.NONE);
 		btnSave.addSelectionListener(new SelectionAdapter() {
 			public void widgetSelected(SelectionEvent e) {
-				String config = ethmanConfig.getText();
+				saveEthmanConfig(ethmanPokrovkaPath.getText(),ethmanList);
+				saveEthmanConfig(ethmanAllPath.getText(),ethmanListAll);
+			}
+
+			private void saveEthmanConfig(String config, List l) {
 				try {
 					String backup_name = backupFile(config);
 					Files.move(Paths.get(config), Paths.get(backup_name), REPLACE_EXISTING);
@@ -568,7 +716,7 @@ public class ConfigGenerator {
 				}
 				try {
 					java.util.List<String> lines = new ArrayList<String>();
-					for (String configLine : ethmanList.getItems()) {
+					for (String configLine : l.getItems()) {
 						lines.add(configLine);
 					}
 					Files.write(Paths.get(config), lines, Charset.forName("UTF-8"));
@@ -579,6 +727,40 @@ public class ConfigGenerator {
 		});
 		btnSave.setBounds(224, 5, 75, 25);
 		btnSave.setText("Save");
+		
+		ethmanAllPath = new Label(composite_1, SWT.NONE);
+		ethmanAllPath.setText("C:\\Dropbox\\ethman_all\\Options.ini");
+		ethmanAllPath.setBounds(415, 10, 208, 15);
+				
+		TabItem tbtmRigsProperties = new TabItem(tabFolder, SWT.NONE);
+		tbtmRigsProperties.setText("Rigs properties");
+		
+		ScrolledComposite scrolledComposite = new ScrolledComposite(tabFolder, SWT.BORDER | SWT.H_SCROLL | SWT.V_SCROLL);
+		tbtmRigsProperties.setControl(scrolledComposite);
+		scrolledComposite.setExpandHorizontal(true);
+		scrolledComposite.setExpandVertical(true);
+		
+		rigsData = new Table(scrolledComposite, SWT.BORDER | SWT.FULL_SELECTION);
+		rigsData.setHeaderVisible(true);
+		rigsData.setLinesVisible(true);
+		
+		TableColumn tblclmnRig = new TableColumn(rigsData, SWT.NONE);
+		tblclmnRig.setWidth(68);
+		tblclmnRig.setText("rig");
+		
+		TableColumn tblclmnLocation = new TableColumn(rigsData, SWT.NONE);
+		tblclmnLocation.setWidth(67);
+		tblclmnLocation.setText("location");
+		
+		TableColumn tblclmnCards = new TableColumn(rigsData, SWT.NONE);
+		tblclmnCards.setWidth(57);
+		tblclmnCards.setText("cards");
+		
+		TableItem tableItem = new TableItem(rigsData, SWT.NONE);
+		tableItem.setText(new String[] {"rig001", "rye", "8"});
+		//tableItem.setText("New TableItem");
+		scrolledComposite.setContent(rigsData);
+		scrolledComposite.setMinSize(rigsData.computeSize(SWT.DEFAULT, SWT.DEFAULT));
 		rigsList.addSelectionListener(new SelectionAdapter() {
 			public void widgetSelected(SelectionEvent e) {
 				currentStart.removeAll();
@@ -587,28 +769,33 @@ public class ConfigGenerator {
 					String rig = rigsList.getSelection()[0];
 					if (!rig.equals("")) {
 						{
-							startFile.setText(dropboxFolder + rig + CLAYMORE_START_BAT);
-							File file = new File(startFile.getText());
-							BufferedReader reader = null;
-							try {
-								reader = new BufferedReader(new FileReader(file));
-								String text = null;
-								while ((text = reader.readLine()) != null) {
-									currentStart.add(text);
-								}
-							} catch (IOException e1) {
-								e1.printStackTrace();
-								startFile.setText(e1.getMessage());
-							} finally {
-								try {
-									if (reader != null) {
-										reader.close();
-									}
-								} catch (IOException e2) {
-								}
-							}
+							readFileContentToList(currentStart, startFile, dropboxFolder + rig + CLAYMORE_START_BAT);
+							readFileContentToList(currentConfig, lblConfigtxt, dropboxFolder + rig + CLAYMORE_CONFIG_TXT);
 						}
 
+					}
+				}
+			}
+
+			protected void readFileContentToList(List list, Label startFile, String filename) {
+				startFile.setText(filename);
+				File file = new File(startFile.getText());
+				BufferedReader reader = null;
+				try {
+					reader = new BufferedReader(new FileReader(file));
+					String text = null;
+					while ((text = reader.readLine()) != null) {
+						list.add(text);
+					}
+				} catch (IOException e1) {
+					e1.printStackTrace();
+					consoleList.add(e1.getMessage());
+				} finally {
+					try {
+						if (reader != null) {
+							reader.close();
+						}
+					} catch (IOException e2) {
 					}
 				}
 			}
@@ -672,5 +859,14 @@ public class ConfigGenerator {
 	}
 	protected List getConsoleList() {
 		return consoleList;
+	}
+	protected List getConfigList() {
+		return configList;
+	}
+	protected List getCurrentConfig() {
+		return currentConfig;
+	}
+	protected Table getTable() {
+		return rigsData;
 	}
 }
