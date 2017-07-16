@@ -43,7 +43,7 @@ import org.eclipse.swt.widgets.TableItem;
 
 public class ConfigGenerator {
 
-	private static final String CLAYMORE_DIR = "c:\\Dropbox\\programs\\claymore_9.5\\";
+	private static final String CLAYMORE_DIR = "c:\\Dropbox\\programs\\claymore_9.6\\";
 //	private static final String CMD_NEXT_LINE = " ^";
 	private static final String CLAYMORE_CONFIG_TXT = "\\Desktop\\config.txt";
 	private static final String CLAYMORE_START_BAT = "\\Desktop\\start.bat";
@@ -208,7 +208,8 @@ public class ConfigGenerator {
 
 	Boolean isDima(String rig)
 	{
-		return rig.equals("rig004") || rig.equals("rig005") || rig.equals("rig006") || rig.startsWith("rig008") || rig.equals("rig010") || rig.equals("rig012") || rig.equals("rig027") || rig.equals("rig028");
+		return rig.equals("rig004") || rig.equals("rig005") || rig.equals("rig006") || rig.startsWith("rig008") || rig.equals("rig010") || rig.equals("rig012") || rig.equals("rig027") 
+				|| rig.equals("rig028") || rig.equals("rig029") || rig.startsWith("rig03");
 	}
 	private void setEthmanConfig(Boolean pokrovka, List ethmanConf) 
 	{
@@ -534,11 +535,11 @@ public class ConfigGenerator {
 		ethmanListAll.setBounds(415, 38, 384, 746);
 
 		coinsList = new List(composite, SWT.BORDER);
-		coinsList.setBounds(72, 10, 71, 465);
+		coinsList.setBounds(72, 10, 71, 570);
 
 		rigsList = new List(composite, SWT.BORDER | SWT.MULTI);
 		rigsList.setLocation(0, 10);
-		rigsList.setSize(71, 465);
+		rigsList.setSize(71, 570);
 		lblConfigtxt = new Label(composite, SWT.NONE);
 		lblConfigtxt.setBounds(411, 362, 464, 15);
 		lblConfigtxt.setText("config.txt");
@@ -616,7 +617,7 @@ public class ConfigGenerator {
 		label_1.setText("\u0422\u0435\u043A\u0443\u0449\u0438\u0439 \u0441\u0442\u0430\u0440\u0442");
 		
 		consoleList = new List(composite, SWT.BORDER);
-		consoleList.setBounds(0, 481, 398, 261);
+		consoleList.setBounds(0, 586, 398, 247);
 		
 		Button btnCreateLinks = new Button(composite, SWT.NONE);
 		btnCreateLinks.addSelectionListener(new SelectionAdapter() {
